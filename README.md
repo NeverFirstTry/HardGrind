@@ -2,6 +2,13 @@
 
 **Singleplayer discipline mod for Fabric.** Every player's OP is gone, Survival is enforced, the difficulty and cheat-relevant gamerules are locked, and once you lock a world, removing the mod doesn't unlock it.
 
+| | |
+|:-:|:-:|
+| ![Joining a locked world](screenshots/modrinth/1-locked-world.png)<br>Joining a locked world | ![The /hardgrind status](screenshots/modrinth/2-status.png)<br>`/hardgrind` status |
+| ![A milestone](screenshots/modrinth/3-milestone.png)<br>A milestone | ![The run log](screenshots/modrinth/4-run-log.png)<br>`/hardgrind log` |
+| ![Arming ironman](screenshots/modrinth/5-ironman.png)<br>Arming ironman | ![Dead in hardcore](screenshots/modrinth/6a-hardcore-death.png)<br>Dead in hardcore... |
+| ![A second chance](screenshots/modrinth/6b-second-chance.png)<br>...and a second chance with `/hardgrind revive` | ![A build world](screenshots/modrinth/7-build-world.png)<br>A build world |
+
 ## Supported versions
 
 | Minecraft | Jar | Java |
