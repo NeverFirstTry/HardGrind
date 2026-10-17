@@ -1,11 +1,16 @@
 pluginManagement {
   repositories {
-    gradlePluginPortal()
-    maven { url = "https://maven.fabricmc.net/" }
+    maven { name = "Fabric"; url = "https://maven.fabricmc.net/" }
     mavenCentral()
-  }
-  plugins {
-    id("fabric-loom") version "1.11.4"
+    gradlePluginPortal()
   }
 }
+
 rootProject.name = "hardgrind"
+
+// One subproject per supported Minecraft version. Each builds its own jar from the shared code in src/
+// plus its compat/ folder; settings for each live in versions/<version>/gradle.properties.
+["1.21.9", "1.21.10", "1.21.11", "26.1.2", "26.2", "26.3"].each { mc ->
+  include(mc)
+  project(":$mc").projectDir = file("versions/$mc")
+}

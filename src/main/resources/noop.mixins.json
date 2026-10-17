@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.rene.noop.mixin",
+  "compatibilityLevel": "JAVA_${java_version}",
+  "mixins": [
+    "MinecraftServerPermissionMixin",
+    "MinecraftServerDifficultyMixin",
+    "PrimaryLevelDataHardcoreMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,5 @@
+# Linux needs gradlew with LF endings, Windows needs gradlew.bat with CRLF.
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.png binary

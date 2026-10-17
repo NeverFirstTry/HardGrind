@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "hardgrind_noop_gametest",
+  "version": "1.0.0",
+  "name": "HardGrind No-OP game tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "com.rene.noop.NoOpGameTest"
+    ]
+  },
+  "depends": {
+    "hardgrind_noop": "*"
+  }
+}

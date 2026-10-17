@@ -1,35 +1,78 @@
 plugins {
-  id("java")
-  id("fabric-loom")
-  id("base")
+  // Same Loom release, two flavours: -remap for the obfuscated versions (1.21.11 and older), plain for 26.1+.
+  id("net.fabricmc.fabric-loom") version "${loom_version}" apply false
+  id("net.fabricmc.fabric-loom-remap") version "${loom_version}" apply false
 }
 
-java {
-  toolchain { languageVersion = JavaLanguageVersion.of(21) }
+subprojects {
+  boolean obfuscated = property("obfuscated").toBoolean()
+  apply plugin: obfuscated ? "net.fabricmc.fabric-loom-remap" : "net.fabricmc.fabric-loom"
+
+  String mc = property("minecraft_version")
+  int javaVersion = property("java_version").toInteger()
+  String compat = property("compat")
+
+  group = property("maven_group")
+  version = "${property("mod_version")}+${mc}"
+  base { archivesName = property("archives_base_name") }
+
+  sourceSets.main.java.srcDirs = [rootProject.file("src/main/java"), rootProject.file("compat/$compat/main/java")]
+  sourceSets.main.resources.srcDirs = [rootProject.file("src/main/resources")]
+
+  dependencies {
+    minecraft("com.mojang:minecraft:$mc")
+    if (obfuscated) {
+      mappings(loom.officialMojangMappings())
+      modImplementation("net.fabricmc:fabric-loader:${property("loader_version")}")
+      modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
+    } else {
+      implementation("net.fabricmc:fabric-loader:${property("loader_version")}")
+      implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
+    }
+  }
+
+  // Game tests live in src/gametest (+ compat/<x>/gametest) and never ship in the mod jar.
+  // They run on a headless server as part of `build`; `runGameTest` runs just them.
+  // Dev-only screenshots for the mod page drive the real 26.3 client, and only when asked for:
+  //   ./gradlew :26.3:runClientGameTest -Pscreenshots   (they land in versions/26.3/build/run/clientGameTest/screenshots)
+  boolean screenshots = mc == "26.3" && project.hasProperty("screenshots")
+  fabricApi {
+    configureTests {
+      createSourceSet = true
+      modId = "hardgrind_noop_gametest"
+      enableGameTests = true
+      enableClientGameTests = screenshots
+      eula = false
+    }
+  }
+  sourceSets.matching { it.name == "gametest" }.configureEach {
+    java.srcDirs = [rootProject.file("src/gametest/java"), rootProject.file("compat/$compat/gametest/java")] +
+        (screenshots ? [rootProject.file("screenshots/java")] : [])
+    // The screenshots' fabric.mod.json adds the client entrypoint to the game tests' one.
+    resources.srcDirs = [rootProject.file(screenshots ? "screenshots/resources" : "src/gametest/resources")]
+  }
+
+  tasks.withType(JavaCompile).configureEach {
+    options.release = javaVersion
+  }
+
+  def props = [version: version.toString(), minecraft_dependency: property("minecraft_dependency"), java_version: javaVersion]
+  tasks.named("processResources") {
+    inputs.properties(props)
+    filesMatching(["fabric.mod.json", "noop.mixins.json", "noop.freecam.mixins.json"]) { expand(props) }
+  }
 }
 
-group = project.findProperty("maven_group")
-version = project.findProperty("mod_version")
-
-base {
-  archivesName = project.findProperty("archives_base_name") as String
+// `./gradlew build` leaves every version's jar in build/libs/ at the top level.
+tasks.register("collectJars", Sync) {
+  into(layout.buildDirectory.dir("libs"))
+  subprojects.each { p ->
+    from(p.tasks.named(p.property("obfuscated").toBoolean() ? "remapJar" : "jar"))
+  }
 }
-
-repositories {
-  mavenCentral()
-  maven { url = uri("https://maven.fabricmc.net/") }
-}
-
-dependencies {
-  minecraft("com.mojang:minecraft:${project.findProperty("minecraft_version")}")
-  mappings("net.fabricmc:yarn:${project.findProperty("yarn_mappings")}:v2")
-  modImplementation("net.fabricmc:fabric-loader:${project.findProperty("loader_version")}")
-  modImplementation("net.fabricmc.fabric-api:fabric-api:${project.findProperty("fabric_api_version")}")
-}
-
-loom { splitEnvironmentSourceSets() }
-
-tasks.processResources {
-  inputs.property("version", project.version)
-  filesMatching("fabric.mod.json") { expand([version: project.version]) }
+tasks.register("build") {
+  group = "build"
+  description = "Builds and tests every Minecraft version, then collects the jars into build/libs."
+  dependsOn(subprojects.collect { "${it.path}:build" })
+  finalizedBy("collectJars")
 }
